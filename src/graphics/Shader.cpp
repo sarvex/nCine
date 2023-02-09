@@ -5,6 +5,7 @@
 #include "Shader.h"
 #include "GLShaderProgram.h"
 #include "RenderResources.h"
+#include "BinaryShaderCache.h"
 #include "tracy.h"
 
 #ifdef WITH_EMBEDDED_SHADERS
@@ -248,8 +249,8 @@ bool Shader::loadFromFile(const char *shaderName, Introspection introspection, c
 	glShaderProgram_->reset(); // reset before attaching new shaders
 	setName(shaderName);
 	glShaderProgram_->setObjectLabel(shaderName);
-	glShaderProgram_->attachShader(GL_VERTEX_SHADER, vertex);
-	glShaderProgram_->attachShader(GL_FRAGMENT_SHADER, fragment);
+	glShaderProgram_->attachShaderFromFile(GL_VERTEX_SHADER, vertex);
+	glShaderProgram_->attachShaderFromFile(GL_FRAGMENT_SHADER, fragment);
 	glShaderProgram_->link(shaderToShaderProgramIntrospection(introspection));
 
 	return isLinked();
@@ -278,7 +279,7 @@ bool Shader::loadFromFile(const char *shaderName, Introspection introspection, D
 	setName(shaderName);
 	glShaderProgram_->setObjectLabel(shaderName);
 	loadDefaultShader(vertex);
-	glShaderProgram_->attachShader(GL_FRAGMENT_SHADER, fragment);
+	glShaderProgram_->attachShaderFromFile(GL_FRAGMENT_SHADER, fragment);
 	glShaderProgram_->link(shaderToShaderProgramIntrospection(introspection));
 
 	return isLinked();
@@ -307,7 +308,7 @@ bool Shader::loadFromFile(const char *shaderName, Introspection introspection, c
 	glShaderProgram_->reset(); // reset before attaching new shaders
 	setName(shaderName);
 	glShaderProgram_->setObjectLabel(shaderName);
-	glShaderProgram_->attachShader(GL_VERTEX_SHADER, vertex);
+	glShaderProgram_->attachShaderFromFile(GL_VERTEX_SHADER, vertex);
 	loadDefaultShader(fragment);
 	glShaderProgram_->link(shaderToShaderProgramIntrospection(introspection));
 
@@ -368,6 +369,16 @@ void Shader::registerBatchedShader(Shader &batchedShader)
 	RenderResources::registerBatchedShader(glShaderProgram_.get(), batchedShader.glShaderProgram_.get());
 }
 
+bool Shader::isBinaryCacheEnabled()
+{
+	return RenderResources::binaryShaderCache().isEnabled();
+}
+
+void Shader::setBinaryCacheEnabled(bool enable)
+{
+	RenderResources::binaryShaderCache().setEnabled(enable);
+}
+
 ///////////////////////////////////////////////////////////
 // PRIVATE FUNCTIONS
 ///////////////////////////////////////////////////////////
@@ -409,7 +420,7 @@ bool Shader::loadDefaultShader(DefaultVertex vertex)
 			vertexShader = "batched_textnodes_vs.glsl";
 			break;
 	}
-	const bool hasCompiled = glShaderProgram_->attachShader(GL_VERTEX_SHADER, (fs::dataPath() + "shaders/" + vertexShader).data());
+	const bool hasCompiled = glShaderProgram_->attachShaderFromFile(GL_VERTEX_SHADER, (fs::dataPath() + "shaders/" + vertexShader).data());
 #else
 	// Skipping the initial new line character of the raw string literal
 	switch (vertex)
@@ -475,7 +486,7 @@ bool Shader::loadDefaultShader(DefaultFragment fragment)
 			fragmentShader = "sprite_fs.glsl";
 			break;
 	}
-	const bool hasCompiled = glShaderProgram_->attachShader(GL_FRAGMENT_SHADER, (fs::dataPath() + "shaders/" + fragmentShader).data());
+	const bool hasCompiled = glShaderProgram_->attachShaderFromFile(GL_FRAGMENT_SHADER, (fs::dataPath() + "shaders/" + fragmentShader).data());
 #else
 	// Skipping the initial new line character of the raw string literal
 	switch (fragment)

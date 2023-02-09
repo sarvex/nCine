@@ -102,6 +102,7 @@ class ImGuiDebugOverlay : public IDebugOverlay
 	void guiWindowSettings();
 	void guiAudioPlayers();
 	void guiInputState();
+	void guiBinaryShaderCache();
 	void guiRenderDoc();
 	void guiAllocators();
 	void guiViewports(Viewport *viewport, unsigned int viewportId);

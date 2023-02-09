@@ -48,6 +48,8 @@ void RenderBatcher::createBatches(const nctl::Array<RenderCommand *> &srcQueue, 
 #endif
 	ASSERT(minBatchSize > 1);
 	ASSERT(maxBatchSize >= minBatchSize);
+	// TODO: Create a hashMap of batched shader pointers and max batch sizes and use that? Or take the min()
+	// between `maxBatchSize` and the real max size
 
 	unsigned int lastSplit = 0;
 

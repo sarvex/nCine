@@ -68,6 +68,9 @@ class DLL_PUBLIC Shader : public Object
 
 	~Shader() override;
 
+	// TODO: Load and save from binary (also in Lua)
+	// TODO: Load from multiple strings? (also in Lua)
+
 	bool loadFromMemory(const char *shaderName, Introspection introspection, const char *vertex, const char *fragment);
 	bool loadFromMemory(const char *shaderName, const char *vertex, const char *fragment);
 	bool loadFromMemory(const char *vertex, const char *fragment);
@@ -112,6 +115,9 @@ class DLL_PUBLIC Shader : public Object
 
 	/// Registers a shaders to be used for batches of render commands
 	void registerBatchedShader(Shader &batchedShader);
+
+	static bool isBinaryCacheEnabled();
+	static void setBinaryCacheEnabled(bool enable);
 
 	inline static ObjectType sType() { return ObjectType::SHADER; }
 
