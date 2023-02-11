@@ -346,7 +346,7 @@ void RenderResources::create()
 			{
 				const int size = block->size() - block->alignAmount();
 				const int batchSize = maxUniformBlockSize / size;
-				LOGE_X("Shader \"%s\", block size: %d + %d align, max batch size: %d", shaderToLoad.objectLabel, size, block->alignAmount(), batchSize);
+				LOGD_X("Shader \"%s\" - block size: %d + %d align bytes, max batch size: %d", shaderToLoad.objectLabel, size, block->alignAmount(), batchSize);
 
 				shaderToLoad.shaderProgram->reset();
 				sourceString.format(BatchSizeFormatString, batchSize);

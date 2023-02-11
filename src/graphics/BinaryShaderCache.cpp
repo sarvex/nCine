@@ -12,7 +12,7 @@ namespace ncine {
 
 namespace {
 	const uint64_t HashSeed = 0x01000193811C9DC5;
-	char const * const ShaderFilenameFormat = "%016lx_%08x_%016lx.bin";
+	char const * const ShaderFilenameFormat = "%016llx_%08x_%016llx.bin";
 
 	unsigned int bufferSize = 0;
 	nctl::UniquePtr<uint8_t[]> bufferPtr;
@@ -31,18 +31,32 @@ BinaryShaderCache::BinaryShaderCache(bool enable, const char *dirname)
 {
 	const IGfxCapabilities &gfxCaps = theServiceLocator().gfxCapabilities();
 	const bool isSupported = gfxCaps.hasExtension(IGfxCapabilities::GLExtensions::ARB_GET_PROGRAM_BINARY);
-	if (isSupported == false)
-		LOGW_X("GL_ARB_get_program_binary extensions not supported, the binary shader cache is not enabled");
 
 	if (isSupported)
 	{
 		const IGfxCapabilities::GlInfoStrings &infoStrings = gfxCaps.glInfoStrings();
 
-		// For a stable hash the OpenGL strings need to be copied
+		// For a stable hash, the OpenGL strings need to be copied so that padding bytes can be set to zero
 		nctl::StaticString<512> platformString;
+
+		// 1) GL_RENDERER string
 		platformString.assign(reinterpret_cast<const char *>(infoStrings.renderer), platformString.capacity());
+
+		unsigned int paddedLength = platformString.length() + 8 - (platformString.length() % 8) + 7;
+		// Set padding bytes to zero for a deterministic hash
+		for (unsigned int i = platformString.length(); i < paddedLength; i++)
+			platformString.data()[i] = '\0';
+
 		platformHash_ += nctl::fasthash64(platformString.data(), platformString.length(), HashSeed);
+
+		// 2) GL_VERSION string
 		platformString.assign(reinterpret_cast<const char *>(infoStrings.glVersion), platformString.capacity());
+
+		paddedLength = platformString.length() + 8 - (platformString.length() % 8) + 7;
+		// Set padding bytes to zero for a deterministic hash
+		for (unsigned int i = platformString.length(); i < paddedLength; i++)
+			platformString.data()[i] = '\0';
+
 		platformHash_ += nctl::fasthash64(platformString.data(), platformString.length(), HashSeed);
 
 		directory_ = fs::joinPath(fs::cachePath(), dirname); // TODO: test cache path on various OS
@@ -57,6 +71,8 @@ BinaryShaderCache::BinaryShaderCache(bool enable, const char *dirname)
 		const bool dirExists = fs::isDirectory(directory_.data());
 		isAvailable_ = (isSupported && dirExists);
 	}
+	else
+		LOGW_X("GL_ARB_get_program_binary extensions not supported, the binary shader cache is not enabled");
 }
 
 ///////////////////////////////////////////////////////////
@@ -120,17 +136,17 @@ const void *BinaryShaderCache::loadFromCache(uint32_t format, uint64_t hash)
 	shaderPath = fs::joinPath(directory_, shaderFilename);
 	if (fs::isFile(shaderPath.data()))
 	{
-		const long int fileSize = fs::fileSize(shaderPath.data());
-		if (bufferSize < fileSize)
-		{
-			bufferSize = fileSize;
-			bufferPtr = nctl::makeUnique<uint8_t[]>(bufferSize);
-		}
-
 		nctl::UniquePtr<IFile> fileHandle = IFile::createFileHandle(shaderPath.data());
 		fileHandle->open(IFile::OpenMode::READ | IFile::OpenMode::BINARY);
 		if (fileHandle->isOpened())
 		{
+			const long int fileSize = fileHandle->size();
+			if (bufferSize < fileSize)
+			{
+				bufferSize = fileSize;
+				bufferPtr = nctl::makeUnique<uint8_t[]>(bufferSize);
+			}
+
 			fileHandle->read(bufferPtr.get(), fileSize);
 			fileHandle->close();
 

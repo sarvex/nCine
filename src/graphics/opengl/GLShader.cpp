@@ -163,7 +163,7 @@ bool GLShader::loadFromStringsAndFile(const char **strings, const char *filename
 	}
 
 	sourceHash_ = RenderResources::binaryShaderCache().hashSources(count, sourceStrings.data(), sourceLengths.data());
-	LOGI_X("%s Shader %u - hash: 0x%016lx", typeToString(type_), glHandle_, sourceHash_);
+	LOGD_X("%s Shader %u - hash: 0x%016lx", typeToString(type_), glHandle_, sourceHash_);
 	glShaderSource(glHandle_, count, sourceStrings.data(), sourceLengths.data());
 
 	return (count > 1);
